@@ -6,10 +6,14 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import com.google.common.collect.ImmutableMap;
 import com.google.gson.Gson;
+import com.google.gson.JsonObject;
 import freemarker.template.Configuration;
 import joptsimple.OptionParser;
 import joptsimple.OptionSet;
@@ -80,6 +84,8 @@ public final class Main {
     // Allows requests from any domain (i.e., any URL). This makes development
     // easier, but it’s not a good idea for deployment.
     Spark.before((request, response) -> response.header("Access-Control-Allow-Origin", "*"));
+
+    Spark.post("/results", new ResultsHandler());
   }
 
   /**
@@ -107,17 +113,43 @@ public final class Main {
   private static class ResultsHandler implements Route {
     @Override
     public String handle(Request req, Response res) {
+      Gson GSON = new Gson();
       // TODO: Get JSONObject from req and use it to get the value of the sun, moon,
       // and rising
       // for generating matches
+      horoscopeData obj = GSON.fromJson(req.body(), horoscopeData.class);
+      String sun = obj.getSun();
+      String moon = obj.getMoon();
+      String rising = obj.getRising();
 
       // TODO: use the MatchMaker.makeMatches method to get matches
+      List<String> matches = MatchMaker.makeMatches(sun, moon, rising);
 
       // TODO: create an immutable map using the matches
+      Map<String, List<String>> immutableMapMatches = Map.of("matches", matches);
 
       // TODO: return a json of the suggestions (HINT: use GSON.toJson())
-      Gson GSON = new Gson();
-      return null;
+      String results = GSON.toJson(immutableMapMatches);
+
+      return results;
+    }
+  }
+
+  private class horoscopeData {
+    private String sun;
+    private String moon;
+    private String rising;
+
+    public String getSun() {
+      return sun;
+    }
+
+    public String getMoon() {
+      return moon;
+    }
+
+    public String getRising() {
+      return rising;
     }
   }
 }
